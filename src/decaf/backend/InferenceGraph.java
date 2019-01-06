@@ -21,7 +21,8 @@ class InferenceGraph {
 	public Map<Temp, Integer> nodeDeg = new HashMap<>();
 	public BasicBlock bb;
 	public Register[] regs;
-	public Register fp;
+	//public Register fp;
+	public Temp fp;
 	public Set<Temp> liveUseLoad = new HashSet<>();
 
 
@@ -33,7 +34,7 @@ class InferenceGraph {
 	}
 
 
-	public void alloc(BasicBlock bb, Register[] regs, Register fp) {
+	public void alloc(BasicBlock bb, Register[] regs, Temp fp) {
 		this.regs = regs;
 		this.bb = bb;
 		this.fp = fp;
@@ -49,7 +50,9 @@ class InferenceGraph {
 
 	private void addNode(Temp node) {
 		if (nodes.contains(node)) return;
-		if (node.reg != null && node.reg.equals(fp)) return;
+		//if (node.reg != null && node.reg.equals(fp)) return;
+		if (node.equals(fp)) return;
+		//System.out.println("add " + node);
 		nodes.add(node);
 		neighbours.put(node, new HashSet<Temp>());
 		nodeDeg.put(node, 0);
@@ -65,6 +68,8 @@ class InferenceGraph {
 
 
 	private void addEdge(Temp a, Temp b) {
+		//System.out.println(a + " " + b);
+		if (neighbours.get(a).contains(b)) return;
 		neighbours.get(a).add(b);
 		neighbours.get(b).add(a);
 		nodeDeg.put(a, nodeDeg.get(a) + 1);
@@ -161,6 +166,13 @@ class InferenceGraph {
 		}
 	}
 
+	void makeEdgesHelper(Temp tmp, Set<Temp> liveOut) {
+		for (Temp t: liveOut) {
+			if (!t.equals(tmp) && neighbours.containsKey(t)) {
+				addEdge(tmp, t);
+			}
+		}
+	}
 
 	// With your definition of inference graphs, build the edges.
 	void makeEdges() {
@@ -169,18 +181,29 @@ class InferenceGraph {
 				case ADD: case SUB: case MUL: case DIV: case MOD:
 				case LAND: case LOR: case GTR: case GEQ: case EQU:
 				case NEQ: case LEQ: case LES:
+					// op0 is defined
+					makeEdgesHelper(tac.op0, tac.liveOut);
 
 				case NEG: case LNOT: case ASSIGN:
+					// op0 is defined
+					makeEdgesHelper(tac.op0, tac.liveOut);
 
 				case LOAD_VTBL: case LOAD_IMM4: case LOAD_STR_CONST:
+					// op0 is defined
+					makeEdgesHelper(tac.op0, tac.liveOut);
 
 				case INDIRECT_CALL:
-
 				case DIRECT_CALL:
+					// op0 maybe null
+					if (tac.op0 != null) {
+						makeEdgesHelper(tac.op0, tac.liveOut);
+					}
 
 				case PARM:
+					break;
 
 				case LOAD:
+					makeEdgesHelper(tac.op0, tac.liveOut);
 
 				case STORE:
 					break;

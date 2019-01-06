@@ -89,6 +89,7 @@ public class Mips implements MachineDescription {
 		Temp fpTemp = Temp.createTempI4();
 		fpTemp.reg = REGS[MipsRegister.RegId.FP.ordinal()];
 		regAllocator = new GraphColorRegisterAllocator(fpTemp, callingConv, GENERAL_REGS);
+		//regAllocator = new BruteRegisterAllocator(fpTemp, callingConv, GENERAL_REGS);
 		stringConst = new HashMap<String, String>();
 	}
 

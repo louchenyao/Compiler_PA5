@@ -1,12 +1,6 @@
 package decaf.backend;
 
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 import decaf.Driver;
 import decaf.dataflow.BasicBlock;
@@ -38,6 +32,21 @@ public class GraphColorRegisterAllocator implements RegisterAllocator {
 
 		// Use InferenceGraph to do basicblock-wise register allocation here.
 		// But before that, you have to do something.
+
+		// System.out.println("fp " + fp);
+
+		for (Temp t: bb.liveUse) {
+			// System.out.println("load " + t);
+			Tac old = bb.tacList;
+			load(old, t);
+			bb.tacList.liveOut = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+			bb.tacList.liveOut.add(t);
+			if (old != null) {
+				bb.tacList.liveOut.addAll(bb.liveUse);
+			}
+		}
+		InferenceGraph g = new InferenceGraph();
+		g.alloc(bb, regs, fp);
 
 		Tac tail = null;
 		for (Tac tac = bb.tacList; tac != null; tail = tac, tac = tac.next) {
