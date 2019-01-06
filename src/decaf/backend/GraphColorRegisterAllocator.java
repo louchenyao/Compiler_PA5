@@ -37,13 +37,9 @@ public class GraphColorRegisterAllocator implements RegisterAllocator {
 
 		for (Temp t: bb.liveUse) {
 			// System.out.println("load " + t);
-			Tac old = bb.tacList;
-			load(old, t);
+			load(bb.tacList, t);
 			bb.tacList.liveOut = new TreeSet<Temp>(Temp.ID_COMPARATOR);
-			bb.tacList.liveOut.add(t);
-			if (old != null) {
-				bb.tacList.liveOut.addAll(bb.liveUse);
-			}
+			bb.tacList.liveOut.addAll(bb.liveUse);
 		}
 		InferenceGraph g = new InferenceGraph();
 		g.alloc(bb, regs, fp);

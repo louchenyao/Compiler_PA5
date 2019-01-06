@@ -1,0 +1,43 @@
+\documentclass{article}
+    \usepackage{amsthm, amsmath}
+    \usepackage{xeCJK}
+    \usepackage{algorithm}
+    \usepackage{algorithmicx}
+    \usepackage{algpseudocode}
+    \usepackage{hyperref}
+    \usepackage{listings}
+    
+    \title{编译原理: PA5}
+    \author{娄晨耀, 2016011343}
+    \date{}
+    
+    
+    \theoremstyle{plain}
+    \newtheorem{thm}{Theorem}
+    
+    \theoremstyle{definition}
+    \newtheorem{alg}{Algorithm}
+    
+    
+    \begin{document}
+    \maketitle
+
+    \section{实现}
+
+    首先在GraphColorRegisterAllocator 的 alloc 开始，要恢复变量。需要调用load吧liveUse的加载进来。注意设置新加载进来的语句的liveOut。
+
+    对于所有定值的寄存器，也就是大部分语句的op0，连边op0 到该语句的liveOut 就可以了。因为这里的op0 一定要分配一个寄存器，但是又不能和要向后传递的存器同时存在。
+    
+    注意处理自环可以跳过。因为自环可能出现的场景比如T4 = T4 + 1，我们并不需要改变T4 分配的寄存器。同时可以判一下重边，然后给跳过。
+    
+    不过这里我们每个基本块都会spill 全部变量出去，所以如果关心一下哪些liveOut 是这个块内需要的变量，可以提高一些速度，但是不本质。
+
+    \section{spill}
+
+    首先我们可以给Temp 增加一个叫做spillOut 的变量，表示这个变量需要spill 到栈上。同时我们Mips.java 设置空闲寄存器的时候，再多留一个寄存器，用来恢复spill 变量临时存放。
+    
+    可以在首先在GraphColorRegisterAllocator里面findReg 的时候，发现是spill 的变量，就插入一条load 语句和store 语句到该语句的前后即可。
+
+    至于选择那些变量spill出去，我们可以贪心的，去统计每个变量的读写次数，然后不断选择读写最不频繁的，设置成spillOut，再把这个点删掉重新尝试染色。
+
+    \end{document}
